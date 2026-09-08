@@ -398,7 +398,7 @@ function showSummary(){
   $("sumPayment").textContent = paymentLabel(payment);
   $("sumTotal").textContent = Number(selectedPackage.price).toFixed(2).replace(".00","") + " €";
   if(payment === "deposit"){
-    $("paymentNote").textContent = "Acompte : la prochaine étape sera de définir le montant de l'acompte et de lancer le paiement sécurisé. La réservation restera en attente tant que le paiement n'est pas validé.";
+    $("paymentNote").textContent = "Acompte : le montant de l'acompte n'est pas encore configuré. Choisis provisoirement le paiement intégral ou le paiement au studio.";
   } else if(payment === "full"){
     $("paymentNote").textContent = "Paiement intégral : la prochaine étape sera le paiement sécurisé. La réservation sera confirmée uniquement après réception de la confirmation de paiement.";
   } else {
@@ -434,6 +434,11 @@ $("confirmBtn").addEventListener("click", async function(){
   const email = $("email").value.trim();
   const phone = $("phone").value.trim();
   const payment = $("payment").value;
+  if(payment === "deposit"){
+    showMessage("Le paiement par acompte sera disponible dès que son montant sera configuré.", false);
+    return;
+  }
+
   $("confirmBtn").disabled = true;
   $("confirmBtn").textContent = "Création…";
 
@@ -451,12 +456,29 @@ $("confirmBtn").addEventListener("click", async function(){
     return;
   }
 
+  const bookingId = result.data;
+
+  if(payment === "full"){
+    $("confirmBtn").textContent = "Ouverture de Stripe…";
+    const checkout = await db.functions.invoke("create-stripe-checkout", {
+      body: { booking_id: bookingId }
+    });
+
+    if(checkout.error || !checkout.data?.checkout_url){
+      showMessage(checkout.error?.message || checkout.data?.error || "Impossible d'ouvrir le paiement Stripe.", false);
+      $("confirmBtn").disabled = false;
+      $("confirmBtn").textContent = "Continuer";
+      return;
+    }
+
+    window.location.href = checkout.data.checkout_url;
+    return;
+  }
+
   $("summary").classList.remove("show");
   $("confirmation").classList.add("show");
-  $("bookingRef").textContent = result.data;
-  $("confirmationNote").innerHTML = payment === "studio"
-    ? "⚠️ <b>Attention :</b> cette demande n'est pas une réservation définitive. Le créneau ne sera bloqué qu'après confirmation.<br><br>Pour les paiements en ligne, la prochaine étape permettra de lancer le paiement sécurisé."
-    : "💳 <b>Paiement :</b> ta demande est enregistrée en attente. La réservation ne sera définitive qu'après validation du paiement."
+  $("bookingRef").textContent = bookingId;
+  $("confirmationNote").innerHTML = "⚠️ <b>Attention :</b> cette demande n'est pas une réservation définitive. Le créneau ne sera bloqué qu'après confirmation. Tu as choisi le paiement au studio.";
   setStep(3);
   $("confirmBtn").disabled = false;
   $("confirmBtn").textContent = "Continuer";
@@ -465,6 +487,24 @@ $("confirmBtn").addEventListener("click", async function(){
 $("newBooking").addEventListener("click", function(){
   window.location.reload();
 });
+
+
+// Retour depuis Stripe : l'URL confirme seulement le retour du Checkout.
+// La réservation devient définitive uniquement lorsque le webhook Stripe la confirme côté serveur.
+(function handleStripeReturn(){
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get("payment");
+  const bookingId = params.get("booking_id");
+  if(!payment || !bookingId) return;
+
+  if(payment === "success"){
+    showMessage("Paiement reçu. Vérification de la confirmation de la réservation en cours…", true);
+  } else if(payment === "cancelled"){
+    showMessage("Paiement annulé. La demande reste en attente et le créneau n'est pas bloqué.", false);
+  }
+
+  window.history.replaceState({}, document.title, window.location.pathname);
+})();
 
 renderCalendar();
 loadPackages();
