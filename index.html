@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WOLF MUSIC — Réservation</title>
+<style>
+:root{--red:#e50914;--bg:#070707;--card:#111;--line:#292929;--muted:#aaa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:1050px;margin:auto;padding:24px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.logo{width:150px;max-height:70px;object-fit:contain}
+.badge{border:1px solid #333;border-radius:999px;padding:8px 12px;color:#bbb;font-size:13px}
+.hero{padding:58px 0 30px}.hero h1{font-size:clamp(46px,7vw,72px);line-height:.92;margin:0;text-transform:uppercase;letter-spacing:-2px}
+.red{color:var(--red)}.hero p{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+.pkg{background:#0b0b0b;border:1px solid var(--line);border-radius:14px;padding:15px;margin:10px 0;cursor:pointer;transition:.15s}
+.pkg:hover,.pkg.active{border-color:var(--red);transform:translateY(-1px)}
+.row{display:flex;justify-content:space-between;gap:10px}.muted{color:var(--muted);font-size:13px}
+label{display:block;margin:16px 0 7px;color:#ddd;font-size:13px}
+input,select{width:100%;padding:14px;border-radius:10px;border:1px solid #333;background:#080808;color:#fff;font-size:15px}
+button{border:0;border-radius:10px;background:var(--red);color:#fff;font-weight:bold;padding:14px;cursor:pointer}
+.primary{width:100%;margin-top:18px}.primary:disabled{opacity:.5;cursor:not-allowed}
+.notice{display:none;margin-top:14px;padding:12px;border-radius:10px;background:#102512;color:#bff0c4;font-size:13px}
+.error{background:#2a1010;color:#ffbcbc;border:1px solid #5b2020}
+.field{position:relative}
+.date-display{width:100%;padding:14px;border:1px solid #333;background:#080808;color:#fff;border-radius:10px;text-align:left;font-size:15px;cursor:pointer}
+.date-display.empty{color:#888}
+.calendar{display:none;position:absolute;z-index:20;top:calc(100% + 8px);left:0;width:100%;min-width:300px;background:#151515;border:1px solid #333;border-radius:16px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+.calendar.open{display:block}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-head strong{font-size:15px}
+.cal-nav{width:38px;height:38px;padding:0;background:#222;border:1px solid #333;font-size:18px}
+.week,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.week div{text-align:center;color:#777;font-size:11px;padding:5px 0}
+.day{min-height:40px;background:transparent;color:#eee;border:1px solid transparent;border-radius:9px;padding:0}
+.day:hover:not(:disabled){background:#222}
+.day.muted-day{color:#444}
+.day.today{border-color:#555}
+.day.selected{background:var(--red);color:#fff}
+.day:disabled{opacity:.25;cursor:not-allowed}
+.time-box{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.time-btn{background:#0b0b0b;border:1px solid #333;color:#ddd;padding:12px 7px;border-radius:9px;font-weight:normal}
+.time-btn:hover{border-color:#777}
+.time-btn.selected{background:var(--red);border-color:var(--red);color:white;font-weight:bold}
+.time-btn:disabled{opacity:.3;cursor:not-allowed}
+.loading{color:#aaa;padding:16px 0}
+footer{padding:30px 0;text-align:center;color:#555;font-size:12px}
+@media(max-width:750px){
+ .grid{grid-template-columns:1fr}.wrap{padding:16px}.calendar{position:fixed;left:16px;right:16px;top:50%;transform:translateY(-50%);width:auto}
+ .time-box{grid-template-columns:repeat(2,1fr)}
+}
+
+.steps{display:flex;gap:8px;margin:0 0 18px}.step{flex:1;padding:8px;border:1px solid #333;border-radius:999px;text-align:center;color:#777;font-size:11px}.step.active{border-color:var(--red);color:#fff;background:#180607}.step.done{color:#aaa}
+.summary{display:none;margin-top:18px;border:1px solid #333;border-radius:16px;background:#0a0a0a;padding:18px}.summary.show{display:block}.summary h3{margin:0 0 14px}.summary-row{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #222;font-size:14px}.summary-row:last-child{border-bottom:0}.summary-total{font-size:20px;font-weight:bold;padding-top:14px}.payment-note{margin-top:14px;padding:12px;border-radius:10px;background:#151515;border:1px solid #292929;color:#bbb;font-size:12px;line-height:1.5}.payment-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.secondary{background:#222;border:1px solid #333}.small{font-size:12px;color:#888;margin-top:8px;line-height:1.45}
+.confirmation{display:none;text-align:center;padding:28px 10px}.confirmation.show{display:block}.check{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:#123018;border:1px solid #2e7037;font-size:28px}.ref{display:inline-block;margin:12px 0;padding:10px 14px;border:1px solid #333;border-radius:10px;background:#090909;font-family:monospace}.warn{background:#2a1d0b;border:1px solid #654718;color:#ffdca0;padding:13px;border-radius:10px;font-size:13px;line-height:1.5;text-align:left;margin-top:14px}.hidden{display:none!important}
+@media(max-width:750px){.payment-actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <img class="logo" src="logo.png" alt="WOLF MUSIC">
+    <span class="badge">10h — 18h</span>
+  </div>
+
+  <section class="hero">
+    <h1>Réserve ton<br><span class="red">studio.</span></h1>
+    <p>Enregistrement · Composition · Mixage · Mastering</p>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Formules</h2>
+      <div id="packages"><div class="loading">Chargement des formules…</div></div>
+      <p class="muted">Sans acompte ou paiement validé, la réservation n'est pas réellement confirmée.</p>
+    </section>
+
+    <section class="card">
+      <h2>Réserver</h2>
+      <div class="steps"><div id="step1" class="step active">1 · CRÉNEAU</div><div id="step2" class="step">2 · RÉCAP</div><div id="step3" class="step">3 · CONFIRMATION</div></div>
+      <div id="selected" class="muted">Choisis d'abord une formule.</div>
+
+      <label>Date</label>
+      <div class="field">
+        <button type="button" id="dateButton" class="date-display empty">Choisir une date</button>
+        <div id="calendar" class="calendar" aria-label="Calendrier">
+          <div class="cal-head">
+            <button type="button" id="prevMonth" class="cal-nav">‹</button>
+            <strong id="monthTitle"></strong>
+            <button type="button" id="nextMonth" class="cal-nav">›</button>
+          </div>
+          <div class="week">
+            <div>LUN</div><div>MAR</div><div>MER</div><div>JEU</div><div>VEN</div><div>SAM</div><div>DIM</div>
+          </div>
+          <div id="days" class="days"></div>
+        </div>
+      </div>
+
+      <label>Heure de début</label>
+      <div id="times" class="time-box">
+        <div class="muted">Choisis une formule et une date.</div>
+      </div>
+
+      <label for="name">Nom / prénom</label>
+      <input id="name" autocomplete="name">
+
+      <label for="email">E-mail</label>
+      <input id="email" type="email" autocomplete="email">
+
+      <label for="phone">Téléphone</label>
+      <input id="phone" autocomplete="tel">
+
+      <label for="payment">Paiement</label>
+      <select id="payment">
+        <option value="deposit">Acompte</option>
+        <option value="full">Paiement intégral</option>
+        <option value="studio">Paiement au studio</option>
+      </select>
+
+      <button id="book" class="primary" disabled>Continuer la réservation</button>
+      <div id="msg" class="notice"></div>
+
+      <div id="summary" class="summary">
+        <h3>Récapitulatif</h3>
+        <div class="summary-row"><span>Formule</span><b id="sumPackage"></b></div>
+        <div class="summary-row"><span>Date</span><b id="sumDate"></b></div>
+        <div class="summary-row"><span>Horaire</span><b id="sumTime"></b></div>
+        <div class="summary-row"><span>Client</span><b id="sumClient"></b></div>
+        <div class="summary-row"><span>Paiement choisi</span><b id="sumPayment"></b></div>
+        <div class="summary-row summary-total"><span>Total</span><b id="sumTotal"></b></div>
+        <div id="paymentNote" class="payment-note"></div>
+        <div class="payment-actions">
+          <button id="backBtn" type="button" class="secondary">← Modifier</button>
+          <button id="confirmBtn" type="button">Continuer</button>
+        </div>
+        <div class="small">Le choix du mode de paiement ne confirme pas encore la réservation. La confirmation définitive intervient uniquement après validation du paiement, ou selon la procédure prévue pour le paiement au studio.</div>
+      </div>
+
+      <div id="confirmation" class="confirmation">
+        <div class="check">✓</div>
+        <h3>Demande enregistrée</h3>
+        <p class="muted">Ta demande a bien été créée.</p>
+        <div class="ref">Référence : <span id="bookingRef"></span></div>
+        <div id="confirmationNote" class="warn"></div>
+        <button id="newBooking" type="button" class="primary">Faire une autre réservation</button>
+      </div>
+    </section>
+  </div>
+  <footer>WOLF MUSIC — Réservation en ligne</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://qqlmwnakftxrxsbpvogi.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_UsHUlM5h_rEq-MMIdu4rLQ_sELoM9oh";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+let selectedPackage = null;
+let selectedDate = "";
+let selectedTime = "";
+let calendarDate = new Date();
+calendarDate.setDate(1);
+
+const $ = id => document.getElementById(id);
+
+function localDateString(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return y + "-" + m + "-" + day;
+}
+
+function todayString() {
+  const d = new Date();
+  return localDateString(d);
+}
+
+function formatDate(value) {
+  if (!value) return "Choisir une date";
+  const parts = value.split("-");
+  return parts[2] + "/" + parts[1] + "/" + parts[0];
+}
+
+function showMessage(text, ok) {
+  const el = $("msg");
+  el.textContent = text;
+  el.className = "notice" + (ok ? "" : " error");
+  el.style.display = "block";
+}
+
+function renderCalendar() {
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  const names = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  $("monthTitle").textContent = names[month] + " " + year;
+
+  const first = new Date(year, month, 1);
+  let start = first.getDay();
+  start = start === 0 ? 6 : start - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const previousDays = new Date(year, month, 0).getDate();
+  const today = todayString();
+
+  $("days").innerHTML = "";
+
+  for (let i = 0; i < 42; i++) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "day";
+    let dayNumber, cellDate, muted = false;
+
+    if (i < start) {
+      dayNumber = previousDays - start + i + 1;
+      cellDate = new Date(year, month - 1, dayNumber);
+      muted = true;
+    } else if (i >= start + daysInMonth) {
+      dayNumber = i - start - daysInMonth + 1;
+      cellDate = new Date(year, month + 1, dayNumber);
+      muted = true;
+    } else {
+      dayNumber = i - start + 1;
+      cellDate = new Date(year, month, dayNumber);
+    }
+
+    const value = localDateString(cellDate);
+    cell.textContent = dayNumber;
+    if (muted) cell.classList.add("muted-day");
+    if (value === today) cell.classList.add("today");
+    if (value === selectedDate) cell.classList.add("selected");
+
+    if (value < today) {
+      cell.disabled = true;
+    } else {
+      cell.addEventListener("click", function() {
+        selectedDate = value;
+        selectedTime = "";
+        $("dateButton").textContent = formatDate(value);
+        $("dateButton").classList.remove("empty");
+        $("calendar").classList.remove("open");
+        renderCalendar();
+        loadTimes();
+      });
+    }
+
+    $("days").appendChild(cell);
+  }
+}
+
+function openCalendar() {
+  if (selectedDate) {
+    const parts = selectedDate.split("-");
+    calendarDate = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+  }
+  renderCalendar();
+  $("calendar").classList.add("open");
+}
+
+async function loadTimes() {
+  const box = $("times");
+  selectedTime = "";
+  if (!selectedPackage || !selectedDate) {
+    box.innerHTML = '<div class="muted">Choisis une formule et une date.</div>';
+    return;
+  }
+
+  box.innerHTML = '<div class="muted">Recherche des créneaux disponibles…</div>';
+
+  const result = await db.rpc("get_available_slots", {
+    p_booking_date: selectedDate,
+    p_package_id: selectedPackage.id
+  });
+
+  if (result.error) {
+    box.innerHTML = '<div class="muted">Impossible de charger les créneaux.</div>';
+    showMessage("Erreur disponibilité : " + result.error.message, false);
+    return;
+  }
+
+  const slots = (result.data || []).filter(slot => slot.available);
+
+  if (!slots.length) {
+    box.innerHTML = '<div class="muted">Aucun créneau disponible ce jour-là.</div>';
+    return;
+  }
+
+  box.innerHTML = "";
+  slots.forEach(slot => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "time-btn";
+    button.textContent = slot.start_time.slice(0,5) + " → " + slot.end_time.slice(0,5);
+    button.addEventListener("click", function() {
+      document.querySelectorAll(".time-btn").forEach(x => x.classList.remove("selected"));
+      button.classList.add("selected");
+      selectedTime = slot.start_time.slice(0,5);
+      updateBookState();
+    });
+    box.appendChild(button);
+  });
+  updateBookState();
+}
+
+function updateBookState() {
+  $("book").disabled = !(selectedPackage && selectedDate && selectedTime);
+}
+
+async function loadPackages() {
+  const result = await db
+    .from("packages")
+    .select("id,name,price,duration_hours,description")
+    .eq("active", true)
+    .order("price");
+
+  if (result.error) {
+    $("packages").innerHTML =
+      '<div class="muted">Impossible de charger les formules.<br><br>' +
+      result.error.message + '</div>';
+    return;
+  }
+
+  if (!result.data || !result.data.length) {
+    $("packages").innerHTML = '<div class="muted">Aucune formule active.</div>';
+    return;
+  }
+
+  $("packages").innerHTML = "";
+
+  result.data.forEach(pkg => {
+    const card = document.createElement("div");
+    card.className = "pkg";
+    card.innerHTML =
+      '<div class="row"><b></b><b>' + pkg.price + ' €</b></div>' +
+      '<div class="muted"></div>';
+    card.querySelector("b").textContent = pkg.name;
+    card.querySelector(".muted").textContent =
+      (pkg.description || "") + " · " + pkg.duration_hours + "h";
+
+    card.addEventListener("click", function() {
+      document.querySelectorAll(".pkg").forEach(x => x.classList.remove("active"));
+      card.classList.add("active");
+      selectedPackage = pkg;
+      selectedTime = "";
+      $("selected").textContent =
+        pkg.name + " — " + pkg.duration_hours + "h — " + pkg.price + " €";
+      loadTimes();
+      updateBookState();
+    });
+
+    $("packages").appendChild(card);
+  });
+}
+
+$("dateButton").addEventListener("click", openCalendar);
+$("prevMonth").addEventListener("click", function(e) {
+  e.stopPropagation();
+  calendarDate.setMonth(calendarDate.getMonth() - 1);
+  renderCalendar();
+});
+$("nextMonth").addEventListener("click", function(e) {
+  e.stopPropagation();
+  calendarDate.setMonth(calendarDate.getMonth() + 1);
+  renderCalendar();
+});
+
+document.addEventListener("click", function(e) {
+  if (!$("calendar").contains(e.target) && e.target !== $("dateButton")) {
+    $("calendar").classList.remove("open");
+  }
+});
+
+function paymentLabel(value){
+  if(value === "deposit") return "Acompte";
+  if(value === "full") return "Paiement intégral";
+  return "Paiement au studio";
+}
+
+function setStep(n){
+  [1,2,3].forEach(i => {
+    const el = $("step"+i);
+    el.classList.toggle("active", i === n);
+    el.classList.toggle("done", i < n);
+  });
+}
+
+function showSummary(){
+  const payment = $("payment").value;
+  $("sumPackage").textContent = selectedPackage.name;
+  $("sumDate").textContent = formatDate(selectedDate);
+  $("sumTime").textContent = selectedTime + " → " + (() => {
+    const [h,m] = selectedTime.split(":").map(Number);
+    const d = new Date(2000,0,1,h,m + Number(selectedPackage.duration_hours)*60);
+    return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  })();
+  $("sumClient").textContent = $("name").value.trim();
+  $("sumPayment").textContent = paymentLabel(payment);
+  $("sumTotal").textContent = Number(selectedPackage.price).toFixed(2).replace(".00","") + " €";
+  if(payment === "deposit"){
+    $("paymentNote").textContent = "Acompte : la prochaine étape sera de définir le montant de l'acompte et de lancer le paiement sécurisé. La réservation restera en attente tant que le paiement n'est pas validé.";
+  } else if(payment === "full"){
+    $("paymentNote").textContent = "Paiement intégral : la prochaine étape sera le paiement sécurisé. La réservation sera confirmée uniquement après réception de la confirmation de paiement.";
+  } else {
+    $("paymentNote").textContent = "Paiement au studio : la demande est enregistrée, mais le créneau n'est pas bloqué tant qu'elle n'est pas confirmée.";
+  }
+  $("summary").classList.add("show");
+  $("book").classList.add("hidden");
+  setStep(2);
+}
+
+$("book").addEventListener("click", function(){
+  const name = $("name").value.trim();
+  const email = $("email").value.trim();
+  const phone = $("phone").value.trim();
+  if(!name || !email || !phone || !selectedDate || !selectedTime || !selectedPackage){
+    showMessage("Remplis tous les champs et choisis un créneau.", false);
+    return;
+  }
+  showMessage("Vérifie les informations avant de continuer.", true);
+  showSummary();
+});
+
+$("backBtn").addEventListener("click", function(){
+  $("summary").classList.remove("show");
+  $("book").classList.remove("hidden");
+  setStep(1);
+  showMessage("Tu peux modifier ta formule, ta date, ton horaire ou tes coordonnées.", true);
+  updateBookState();
+});
+
+$("confirmBtn").addEventListener("click", async function(){
+  const name = $("name").value.trim();
+  const email = $("email").value.trim();
+  const phone = $("phone").value.trim();
+  const payment = $("payment").value;
+  $("confirmBtn").disabled = true;
+  $("confirmBtn").textContent = "Création…";
+
+  const result = await db.rpc("create_booking", {
+    p_name:name, p_email:email, p_phone:phone,
+    p_package_id:selectedPackage.id, p_booking_date:selectedDate,
+    p_start_time:selectedTime, p_payment_mode:payment
+  });
+
+  if(result.error){
+    showMessage(result.error.message || "Impossible de créer la réservation.", false);
+    $("confirmBtn").disabled = false;
+    $("confirmBtn").textContent = "Continuer";
+    await loadTimes();
+    return;
+  }
+
+  $("summary").classList.remove("show");
+  $("confirmation").classList.add("show");
+  $("bookingRef").textContent = result.data;
+  $("confirmationNote").innerHTML = payment === "studio"
+    ? "⚠️ <b>Attention :</b> cette demande n'est pas une réservation définitive. Le créneau ne sera bloqué qu'après confirmation.<br><br>Pour les paiements en ligne, la prochaine étape permettra de lancer le paiement sécurisé."
+    : "💳 <b>Paiement :</b> ta demande est enregistrée en attente. La réservation ne sera définitive qu'après validation du paiement."
+  setStep(3);
+  $("confirmBtn").disabled = false;
+  $("confirmBtn").textContent = "Continuer";
+});
+
+$("newBooking").addEventListener("click", function(){
+  window.location.reload();
+});
+
+renderCalendar();
+loadPackages();
+</script>
+</body>
+</html>
